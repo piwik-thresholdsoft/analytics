@@ -4,6 +4,10 @@
  * Author: rameshpaul.ch@thresholdsoft.com
  * Date: 11/9/14
  * Time: 3:40 PM
+ *
+ * Tracker Model
+ * It provides CURD operations on tracking collections
+ *  sites, log_visit, log_action, log_link_visit, log_conversion, log_conversion_item, goals
  */
 
 class Trackermodel extends CI_Model{

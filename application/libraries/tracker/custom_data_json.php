@@ -2,6 +2,8 @@
 /**
  * Created by Threshold soft solutions.
  * Author: rameshpaul.ch@thresholdsoft.com
+ *
+ * This is custom_data collection data format
  */
 class CustomDataJSON{
 

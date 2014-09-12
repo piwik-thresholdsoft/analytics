@@ -4,6 +4,8 @@
  * Author: rameshpaul.ch@thresholdsoft.com
  * Date: 11/9/14
  * Time: 3:40 PM
+ *
+ * This class prepares data to be inserted into tracking collection based information received from the js client.
  */
 
 class Tracker_main {
@@ -14,6 +16,13 @@ class Tracker_main {
         $this->CI = get_instance();
     }
 
+    /**
+     * Handle tracker information
+     * Prepare data tbe inserted into DB based on tracker information
+     * @param $request
+     * @param $requestData
+     * @return array
+     */
     public function handle($request, $requestData){
         $returnData = array();
 
@@ -55,6 +64,11 @@ class Tracker_main {
         return $returnData;
     }
 
+    /**
+     * Calculate configID
+     * @param $request
+     * @return string
+     */
     public function calculateConfigID($request){
         $plugins = $request->getPlugins();
         $userAgent = $request->getUserAgent();
@@ -71,10 +85,20 @@ class Tracker_main {
         return $currConfigID;
     }
 
+    /**
+     * Identify Operation for visitor logging
+     * @return string
+     */
     public function identifyOperation(){
       return $this->logOperation;
    }
 
+    /**
+     * Prepare log_visit collection data
+     * @param $request
+     * @param $logData
+     * @return mixed
+     */
     private function logVisit($request, $logData){
         /** LOG VISIT */
         $this->CI->load->library('tracker/log_visit_json', $logData);
@@ -90,7 +114,9 @@ class Tracker_main {
         $s = $visitTotalTime->s;
         $timeDiff = (($hr*3600)+($m*60)+$s);
 
+        /** Identify visitor type */
         if(empty($logData['idvisit']) || ($timeDiff > VISIT_TIME_DIFF)){
+            /** Visitor type new visitor */
             $this->logOperation = 'insert';
 
             $defData['idvisit'] = time();
@@ -134,6 +160,7 @@ class Tracker_main {
             $defData['location_provider']         = 'Ip';
 
         }else{
+            /** Visitor type returning visitor */
             $this->logOperation = 'update';
             //print_r($logData);
             $referURL = $request->urlReferer();
@@ -196,6 +223,12 @@ class Tracker_main {
         return $data;
     }
 
+    /**
+     * Prepare data for log_action collection
+     * @param $request
+     * @param $data
+     * @return mixed
+     */
     private function logAction($request, $data){
         /* LOG ACTION*/
         $this->CI->load->library('tracker/log_action_json');
@@ -215,6 +248,12 @@ class Tracker_main {
         return $logActionData;
     }
 
+    /**
+     * Prepare log_link_visit_action collection data
+     * @param $request
+     * @param $logData
+     * @return mixed
+     */
     private function logLinkVisit($request, $logData){
         /*LOG LINK VISIT */
         $this->CI->load->library('tracker/log_link_visit_json', $logData);
@@ -252,6 +291,11 @@ class Tracker_main {
         return $logLinkVisitData;
     }
 
+    /**
+     * Custom variables preparation
+     * @param $data
+     * @return mixed
+     */
     private function prepareCustomVariables($data){
         $customVars['custom_var_k1'] = '';
         $customVars['custom_var_v1'] = '';
@@ -294,6 +338,13 @@ class Tracker_main {
         return $customVars;
     }
 
+    /**
+     * Handle goals and e-commerce conversions
+     * @param $request
+     * @param $requestData
+     * @param $logData
+     * @return array
+     */
     private function handleGoals($request, $requestData, $logData){
         /**
          * Check for Goal matcher
@@ -369,14 +420,19 @@ class Tracker_main {
         return $goalsUpdated;
     }
 
-
-    private function logConversion($reuest, $logData){
+    /**
+     * Prepare data for log_conversion collection
+     * @param $request
+     * @param $logData
+     * @return mixed
+     */
+    private function logConversion($request, $logData){
         $this->CI->load->library('tracker/log_conversion_json');
         $defData = $this->CI->log_conversion_json->getLogConversion();
         $dateTime = date("Y-m-d H:i:s");
 
         $defData['idvisit']                               =   $logData['idvisit'];
-        $defData['idsite']                                =   '';
+        $defData['idsite']                                =   $logData['idsite'];
         $defData['idvisitor']                             =   $logData['idvisitor'];
         $defData['server_time']                           =   $dateTime;
         $defData['idaction_url']                          =   $logData['idaction'];
@@ -420,6 +476,11 @@ class Tracker_main {
         return $data;
     }
 
+    /**
+     * Prepare log_converted_items data for an e-commerce order
+     * @param $logData
+     * @return mixed
+     */
     private function logConversionItem($logData){
         $this->CI->load->library('tracker/log_conversion_item_json');
         $defData = $this->CI->log_conversion_item_json->getLogConversionItem();
@@ -445,6 +506,14 @@ class Tracker_main {
     }
 
 
+    /**
+     * Handle Ecommerce tracking information
+     * Track ecommerce data based on site settings
+     * @param $request
+     * @param $logData
+     * @param $data
+     * @return array
+     */
     private function handleEcommerceTracking($request, $logData, $data){
         //print_r($logData);
         $siteInfo = $data['siteInfo'];

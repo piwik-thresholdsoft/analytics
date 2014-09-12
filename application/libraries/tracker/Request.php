@@ -2,6 +2,8 @@
 /**
  * Created by Threshold soft solutions.
  * Author: rameshpaul.ch@thresholdsoft.com
+ *
+ * This class provides all request data coming from the js client
  */
 
 /*class Request {

@@ -2,6 +2,8 @@
 /**
  * Created by Threshold soft solutions.
  * Author: rameshpaul.ch@thresholdsoft.com
+ *
+ * This is sites collection data format
  */
 
 

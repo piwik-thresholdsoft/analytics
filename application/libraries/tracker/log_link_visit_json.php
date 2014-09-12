@@ -2,6 +2,8 @@
 /**
  * Created by Threshold soft solutions.
  * Author: rameshpaul.ch@thresholdsoft.com
+ *
+ * This is log_link_visit collection data format
  */
 
 class Log_link_visit_json{

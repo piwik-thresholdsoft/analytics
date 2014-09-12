@@ -4,6 +4,8 @@
  * Author: rameshpaul.ch@thresholdsoft.com
  * Date: 11/9/14
  * Time: 3:40 PM
+ *
+ * This is main tracking file, all the tracking operations are done here
  */
 
 class Tracker extends CI_Controller {
@@ -14,15 +16,20 @@ class Tracker extends CI_Controller {
         $this->load->library('tracker/tracker_main');
     }
 
+    /**
+     * Main tracking method
+     */
     public function index(){
         $params[] = $_GET+$_POST;
+
         $this->load->library('tracker/request', $params);
         $siteID = $this->request->getIdSite();
-        $res = $this->trackermodel->checkSiteID($siteID);
-
-        //print_r($res);
-
         $request = $this->request;
+
+        /**
+         * Check site exists or not
+         */
+        $res = $this->trackermodel->checkSiteID($siteID);
 
         if(!empty($res)){
             $commonData = array();
@@ -42,16 +49,22 @@ class Tracker extends CI_Controller {
             $visitorData = array_merge((array)$visitorType, $commonData, $siteInfo);
 
             if(is_array($visitorType)){
-                //Visitor is returning visitor
+                /** Visitor is returning visitor **/
                 $this->handleVisitor($this->request, $visitorData);
             }else{
-                //Visitor is new visitor
+                /** Visitor is new visitor */
                 $visitorData['idsite'] = $siteID;
                 $this->handleVisitor($this->request, $visitorData);
             }
         }
     }
 
+    /**
+     * Identify Visitor based on device settings
+     * @param {object}
+     * @param {array}
+     * @return {array}
+     */
     private function identifyVisitor($request, $siteID){
         $currConfigID = $this->tracker_main->calculateConfigID($request);
 
@@ -59,6 +72,12 @@ class Tracker extends CI_Controller {
         return $isVisitorExists;
     }
 
+    /**
+     * Handle visitor operations
+     * identify user tracking information and log them into database
+     * @param {object}
+     * @param {array}
+     */
     private function handleVisitor($request, $siteData){
         if(is_array($siteData)){
             $defData = $siteData;
@@ -67,26 +86,24 @@ class Tracker extends CI_Controller {
             }
 
             $data = $this->tracker_main->handle($request, $defData);
-            //print_r($data);
 
             $operation = $this->tracker_main->identifyOperation();
-            //print_r($operation);
+
             if($operation === 'insert'){
+                /** Insert unique visits data */
                 $res['logVisit'] = $this->trackermodel->insertVisit($data['logVisit']);
             }else{
+                /** Update returning visits data */
                 $where = array("idsite" => $defData['idsite'], "_id" => $id);
                 $updateData = $data['logVisit'];
-                //$updateData['_id'] = $id;
                 $res['logVisit'] = $this->trackermodel->updateVisit($where, $updateData);
-                //echo "Update visit>>";
-                //print_r($res['logVisit']);
             }
-
+            /** Insert visit action data */
             $res['logAction'] = $this->trackermodel->insertLogAction($data['logAction']);
+            /** Insert link visit action data */
             $res['logLinkVisit'] = $this->trackermodel->insertLinkVisit($data['logLinkVisit']);
 
             $goalsMatched = $data['goalsMatched'];
-            //print_r($goalsMatched);
 
             /**
              * Get conversions for this goal if exists

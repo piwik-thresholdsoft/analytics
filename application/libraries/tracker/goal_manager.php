@@ -2,6 +2,8 @@
 /**
  * Created by Threshold soft solutions.
  * Author: rameshpaul.ch@thresholdsoft.com
+ *
+ * This class identifies if goals created for the site and how to identify them and returns matched goals
  */
 
 class Goal_manager {
@@ -9,6 +11,11 @@ class Goal_manager {
 
     }
 
+    /**
+     * Check if goal is set against the current URL
+     * @param $data
+     * @return array
+     */
     public function checkForGoal($data){
 
         $type = $data['type'];
@@ -29,6 +36,12 @@ class Goal_manager {
         return $return;
     }
 
+    /**
+     * Check with goal pattern for current url
+     * @param $type
+     * @param $data
+     * @return array
+     */
     private function checkWithPatterns($type, $data){
         $patterns = array('url', 'download', 'click', 'manual');
         $return = array("goalMatch"=>false, "data"=>$data);
@@ -57,6 +70,13 @@ class Goal_manager {
         return $return;
     }
 
+    /**
+     * Check if goal is matched with pattern
+     * @param $patternType
+     * @param $matchAttr
+     * @param $data
+     * @return array
+     */
     private function matchForGoal($patternType, $matchAttr, $data){
         $defaultPatternTypes = array("contains", "exact", "regex");
         $return = array("goalMatch"=>false, "data"=>$data);
