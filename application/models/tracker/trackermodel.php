@@ -68,26 +68,62 @@ class Trackermodel extends CI_Model{
         try{
             /*$cursor = $collection->findOne(array('config_id' =>$configID, 'idsite'=>$siteID));*/
             $res1 = $collection->find(array('config_id' =>$configID, 'idsite'=>$siteID));
-            $res2 = iterator_to_array($res1->sort(array("visit_last_action_time"=>1)));
-            return end($res2);
+            $res1 = iterator_to_array($res1);
+            uasort($res1, function($a, $b) {
+                return strtotime($a['visit_last_action_time'])<strtotime($b['visit_last_action_time'])?1:-1;
+            });
+            //print_r($res1);
+            return reset($res1);
         }catch (MongoCursorException $e){
             $this->returnException($e);
         }
     }
 
+    public function getLogVisitData($where){
+        $collection = $this->collectionLogVisit;
+        try{
+            $res = $collection->find($where);
+            $res = iterator_to_array($res);
+            return $res;
+        }catch (MongoCursorException $e){
+            $this->returnException($e);
+        }
+    }
+
+    //
 
     /**
      * COLLECTION log_actions OPERATIONS
      */
-    public function insertLogAction($data){
+    public function insertLogAction($data, $type=false){
         $log_visit = $this->collectionLogAction;
 
         try{
-            $log_visit->insert($data);
-            $newDocID = $data['_id'];
+            if($type){
+                //echo "\n log_action batch insert \n";
+                //print_r($data);
+                $log_visit->batchInsert($data);
+                $newDocID = $data;
+            }else{
+                //echo "\n log_action normal insert \n";
+                //print_r($data);
+                $log_visit->insert($data);
+                $newDocID = $data['_id'];
+            }
             $res = array("status"=>'success', 'data'=>array("insertID"=>$newDocID));
             return $res;
         }catch (MongoCursorException $e) {
+            $this->returnException($e);
+        }
+    }
+
+    public function getLogActionData($where, $select = array()){
+        $collection = $this->collectionLogAction;
+        try{
+            $res = $collection->find($where, $select);
+            $res = iterator_to_array($res);
+            return $res;
+        }catch (MongoCursorException $e){
             $this->returnException($e);
         }
     }
@@ -108,12 +144,25 @@ class Trackermodel extends CI_Model{
         }
     }
 
+    public function getLogLinkVisitData($where, $select = array()){
+        $collection = $this->collectionLogLinkVisit;
+        try{
+            $res = $collection->find($where, $select);
+            $res = iterator_to_array($res);
+            return $res;
+        }catch (MongoCursorException $e){
+            $this->returnException($e);
+        }
+    }
+
+
     /**
      * COLLECTION log_conversions OPERATIONS
      */
     public function insertConversion($data){
         $log_conversion = $this->collectionLogConversion;
-
+        //echo "\n IN INSERT CONVERSION \n";
+        //print_r($data);
         try{
             $log_conversion->insert($data);
             $newDocID = $data['_id'];

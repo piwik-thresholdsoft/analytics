@@ -36,6 +36,6 @@ define('FOPEN_READ_WRITE_CREATE',				'a+b');
 define('FOPEN_WRITE_CREATE_STRICT',				'xb');
 define('FOPEN_READ_WRITE_CREATE_STRICT',		'x+b');
 
-define('VISIT_TIME_DIFF', '300'); //visit time difference in seconds
+define('VISIT_TIME_DIFF', '3000'); //visit time difference in seconds
 /* End of file constants.php */
 /* Location: ./application/config/constants.php */

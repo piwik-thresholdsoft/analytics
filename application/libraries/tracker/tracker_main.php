@@ -10,20 +10,48 @@
 
 class Tracker_main {
 
+    const TYPE_PAGE_URL = 1;
+    const TYPE_OUTLINK = 2;
+    const TYPE_DOWNLOAD = 3;
+    const TYPE_PAGE_TITLE = 4;
+    const TYPE_ECOMMERCE_ITEM_SKU = 5;
+    const TYPE_ECOMMERCE_ITEM_NAME = 6;
+    const TYPE_ECOMMERCE_ITEM_CATEGORY = 7;
+    const TYPE_SITE_SEARCH = 8;
+
+    const TYPE_EVENT = 10; // Alias TYPE_EVENT_CATEGORY
+    const TYPE_EVENT_CATEGORY = 10;
+    const TYPE_EVENT_ACTION = 11;
+    const TYPE_EVENT_NAME = 12;
+
+    const TYPE_EVENT_VALUE = 9; //Added by Ramesh Paul
+
+    const DB_COLUMN_CUSTOM_FLOAT = 'custom_float';
+
+
     private $logOperation = 'insert';
+
+    private $trackerModel;
+    private $utility;
 
     public function __construct(){
         $this->CI = get_instance();
+        $this->trackerModel = new stdClass();
+        $this->CI->load->library('utility');
+        $this->utility = $this->CI->utility;
     }
 
     /**
      * Handle tracker information
      * Prepare data tbe inserted into DB based on tracker information
      * @param $request
+     * @param $trackerModel
      * @param $requestData
      * @return array
      */
-    public function handle($request, $requestData){
+    public function handle($request, $trackerModel, $requestData){
+        $this->trackerModel = $trackerModel;
+
         $returnData = array();
 
         /**
@@ -47,14 +75,149 @@ class Tracker_main {
 
         //print_r($data);
 
+        if(isset($data['idvisit'])){
+            $logLinkVisitActionData = $this->trackerModel->getLogLinkVisitData(array("idsite" => $data['idsite'], "idvisit"=> $data["idvisit"]), array("idaction_name", "idaction_url"));
+            //print_r(($logLinkVisitActionData));
+
+            $referrerURL = $request->urlReferer();
+            $pageURL = $request->getVisitURL();
+            $pageName = $request->getActionData();
+            $ecNames = $request->getEcommerceItems();
+            $isReferrerURLExists = false;
+            $isReferrerNameExists = false;
+            $isCurrentURLExists = false;
+            $isCurrentNameExists = false;
+            $isCurrentSKUExists = false;
+            $pageSKUs = array();
+            if($ecNames != 0){
+                foreach($ecNames as $ecn){
+                    $pageSKUs[] = $ecn['sku'];
+                }
+            }
+
+            //print_r($pageSKUs);
+
+            foreach($logLinkVisitActionData as $linkVisitData){
+                $urls = $this->trackerModel->getLogActionData(array("idaction"=>$linkVisitData['idaction_name'], "type"=>self::TYPE_PAGE_URL));
+                $actionLogNamesData = $this->trackerModel->getLogActionData(array("idaction"=>$linkVisitData['idaction_name'], "type"=>array('$in'=> array(self::TYPE_PAGE_TITLE, self::TYPE_ECOMMERCE_ITEM_NAME,self::TYPE_ECOMMERCE_ITEM_CATEGORY,self::TYPE_ECOMMERCE_ITEM_SKU,self::TYPE_EVENT,self::TYPE_EVENT_ACTION,self::TYPE_EVENT_CATEGORY,self::TYPE_EVENT_NAME,self::TYPE_EVENT_VALUE,self::TYPE_SITE_SEARCH))));
+                $currentName = $this->trackerModel->getLogActionData(array("idaction"=>$linkVisitData['idaction_name'], "type"=>array('$in'=> array(self::TYPE_PAGE_TITLE, self::TYPE_ECOMMERCE_ITEM_NAME,self::TYPE_ECOMMERCE_ITEM_CATEGORY,self::TYPE_ECOMMERCE_ITEM_SKU,self::TYPE_EVENT,self::TYPE_EVENT_ACTION,self::TYPE_EVENT_CATEGORY,self::TYPE_EVENT_NAME,self::TYPE_EVENT_VALUE,self::TYPE_SITE_SEARCH))));
+                foreach($urls as $urlRef){
+                    //Match for entry page with referrer url
+                    if($urlRef['name'] == $referrerURL){
+                        //print_r($names);
+                        $actionLogURLData = $urls;
+                    }
+
+                    //Check for current page reload
+                    if($urlRef['name'] == $pageURL){
+                        $currentURL = $urlRef;
+                    }
+                }
+            }
+            //print_r($currentName);
+            //echo "\n names \n";
+            //print_r($actionLogNamesData);
+            if(isset($actionLogNamesData)){
+                foreach($actionLogNamesData as $refNames){
+                   // print_r($refNames);
+                    $visitEntryIdActionName = $refNames['idaction'];
+                    $isReferrerNameExists = true;
+                }
+            }
+            //print_r($currentURL);
+            //echo "\n urls \n";
+            //print_r($actionLogURLData);
+            if(isset($actionLogURLData)){
+                foreach($actionLogURLData as $refURL){
+                   // print_r($refURL);
+                    $visitEntryIdActionURL  = $refURL['idaction'];
+                    $isReferrerURLExists = true;
+                }
+            }
+
+            if(isset($currentName)){
+                //print_r($currentName);
+                foreach($currentName as $cName){
+                    //echo "\n current name\n";
+                   // print_r($cName);
+                    if(in_array($cName['name'], $pageSKUs)){
+                        $visitExitIdActionName = $cName['idaction'];
+                        $isCurrentSKUExists = true;
+                    }
+
+                    if($cName['name'] == $pageName['action_name']){
+                       $isCurrentNameExists = true;
+                       $visitExitIdActionName = $cName['idaction'];
+                    }
+                }
+            }
+
+            if(isset($currentURL)){
+                //echo "\n current url \n";
+               // print_r($currentURL);
+                $visitExitIdActionURL = $currentURL['idaction'];
+                $isCurrentURLExists = true;
+            }
+
+            $isLogActionExists['curr_url'] = $isCurrentURLExists;
+            $isLogActionExists['curr_name'] = $isCurrentNameExists;
+            $isLogActionExists['ref_url'] = $isReferrerURLExists;
+            $isLogActionExists['ref_name'] = $isReferrerNameExists;
+            $isLogActionExists['curr_sku'] = $isCurrentSKUExists;
+            //$visitExitIdActionName  = '';
+            //$visitExitIdActionURL   = '';
+        }
+
         $returnData['logVisit'] = $this->logVisit($request, $data);
-        $returnData['logAction'] = $this->logAction($request, $returnData['logVisit']);
-        $returnData['logLinkVisit'] = $this->logLinkVisit($request, ($returnData['logVisit']+$returnData['logAction']));
+        $returnData['logAction'] = $this->logAction($request, $returnData['logVisit'], $isLogActionExists);
+        $logVisitLogActionData = $returnData['logVisit'];
+        $logVisitLogActionData['logAction'] = $returnData['logAction'];
+        $returnData['logLinkVisit'] = $this->logLinkVisit($request, $logVisitLogActionData);
+
+        /** Check previous visit details for entry and exit pages */
+        //echo "\n LOG action data \n";
+       // print_r($returnData['logAction']);
+        if($this->utility->isMulti($returnData['logAction'])){
+            foreach($returnData['logAction'] as $logAction){
+                if($logAction['type'] == self::TYPE_PAGE_URL){
+                    $visitEntryIdActionURL  = $logAction['idaction'];
+                    $visitExitIdActionURL   = $logAction['idaction'];
+                }
+                if($logAction['type'] == self::TYPE_PAGE_TITLE){
+                    $visitEntryIdActionName = $logAction['idaction'];
+                    $visitExitIdActionName  = $logAction['idaction'];
+                }
+            }
+        }
+
+        if(!$isReferrerNameExists){
+            $visitEntryIdActionName = '';
+        }
+
+        if(!$isReferrerURLExists){
+            $visitEntryIdActionURL = '';
+        }
+
+        if(!$isCurrentNameExists){
+            $visitExitIdActionName = '';
+        }
+
+
+        $returnData['logVisit']['visit_entry_idaction_name'] = $visitEntryIdActionName;
+        $returnData['logVisit']['visit_entry_idaction_url']  = $visitEntryIdActionURL;
+        $returnData['logVisit']['visit_exit_idaction_name']  = $visitExitIdActionName;
+        $returnData['logVisit']['visit_exit_idaction_url']   = $visitExitIdActionURL;
+
+        $returnData['logLinkVisit']['idaction_url_ref'] = $visitEntryIdActionURL;
+        $returnData['logLinkVisit']['idaction_name_ref'] = $visitEntryIdActionName;
 
         /**
          * Check if goal is set
          */
-        $returnData['goalsMatched'] = $this->handleGoals($request, $data, ($returnData['logVisit']+$returnData['logAction']+$returnData['logLinkVisit']));
+        $logVisitActionLinkData = $logVisitLogActionData+$returnData['logLinkVisit'];
+        $logVisitActionLinkData['idaction_url'] = $visitExitIdActionURL;
+        $logVisitActionLinkData['idaction_name'] = $visitExitIdActionURL;
+        $returnData['goalsMatched'] = $this->handleGoals($request, $data, $logVisitActionLinkData);
 
         /**
          * Handle ecommerce tracking
@@ -104,6 +267,18 @@ class Tracker_main {
         $this->CI->load->library('tracker/log_visit_json', $logData);
         $defData = $this->CI->log_visit_json->getLogVisit();
         $visitLastActionTime = isset($logData['visit_last_action_time']) ? $logData['visit_last_action_time'] :  $defData['visit_last_action_time'];
+        $userAgent = $request->getUserAgent();
+        $plugins = $request->getPlugins();
+        $userIP = $request->getIp();
+
+        $configID = md5(
+                            $userAgent['os']
+                            .$userAgent['browser_name']
+                            .$userAgent['browser_version']
+                            .$userAgent['language']
+                            .$userIP
+                            .implode(',', $plugins)
+                        );
 
         $previousVisitTime = new DateTime($visitLastActionTime);
         $currVisitTime = new DateTime(Date("Y-m-d H:i:s"));
@@ -114,29 +289,21 @@ class Tracker_main {
         $s = $visitTotalTime->s;
         $timeDiff = (($hr*3600)+($m*60)+$s);
 
+        //print_r($timeDiff."---------" .$logData['idvisit']);
+
         /** Identify visitor type */
         if(empty($logData['idvisit']) || ($timeDiff > VISIT_TIME_DIFF)){
             /** Visitor type new visitor */
             $this->logOperation = 'insert';
 
             $defData['idvisit'] = time();
-            $defData['idvisitor'] = uniqid();
+            $defData['idvisitor'] = md5($configID);
             $defData['config_resolution'] = $request->getDisplayResolution();
             $defData['visitor_localtime'] = $request->getLocalTime();
             $defData['referer_url'] = $request->urlReferer();
 
-            $userAgent = $request->getUserAgent();
-            $plugins = $request->getPlugins();
-            $userIP = $request->getIp();
 
-            $defData['config_id'] =  md5(
-                                         $userAgent['os']
-                                        .$userAgent['browser_name']
-                                        .$userAgent['browser_version']
-                                        .$userAgent['language']
-                                        .$userIP
-                                        .implode(',', $plugins)
-                                        );
+            $defData['config_id'] = $configID;
             $defData['visit_first_action_time']   = Date('Y-m-d H:i:s');
 
             /**
@@ -169,10 +336,6 @@ class Tracker_main {
             $defData['visitor_days_since_last'] = $request->getDaysSinceLastVisit();
 
             if($referURL == $previousURL){
-                $defData['visit_entry_idaction_name'] = '';
-                $defData['visit_entry_idaction_url']  = '';
-                $defData['visit_exit_idaction_name']  = '';
-                $defData['visit_exit_idaction_url']   = '';
             }
 
             //UPDATE THE LOG
@@ -180,8 +343,8 @@ class Tracker_main {
             $defData['visit_total_searches']      = ''; // TODO $data['visit_total_searches'];
             $defData['visit_total_actions']       = ''; // TODO $data['visit_total_actions'];
 
-            $defData['visitor_count_visits'] = ''; //TODO
-            $defData['example_visit_dimension'] = '';
+            $defData['visitor_count_visits'] = ($logData['visitor_count_visits']+1); //TODO
+            $defData['example_visit_dimension'] = ''; //TODO
             $defData['visitor_returning']         = '1';
 
             $defData['visitor_days_since_first']  = $visitTotalTime->d;
@@ -227,67 +390,146 @@ class Tracker_main {
      * Prepare data for log_action collection
      * @param $request
      * @param $data
+     * @param $isActionExists
      * @return mixed
      */
-    private function logAction($request, $data){
+    public function logAction($request, $data, $isActionExists){
         /* LOG ACTION*/
-        $this->CI->load->library('tracker/log_action_json');
-        $defData = $this->CI->log_action_json->getLogAction();
-
+        var_dump($isActionExists);
         $actionData = $request->getActionData();
 
+        $pageURL = $request->getVisitURL();
+        $pageTitle = $actionData['action_name'];
+        $link = $actionData['link'];
+        $ecommerceItems = $request->getEcommerceItems();
+
+        $logActionData = array();
+
+        /** Identify action types */
+        if($pageTitle != ''){
+            if(!$isActionExists['curr_name']){
+                $actionName = $actionData['action_name'];
+                $actionType = self::TYPE_PAGE_TITLE;
+                $logActionData[] = $this->prepareLogActionData($actionName, $actionType, '');
+            }
+        }
+
+        if($pageURL != ''){
+            if(!$isActionExists['curr_url']){
+                $actionName = $pageURL;
+                $actionType = self::TYPE_PAGE_URL;
+                $logActionData[] = $this->prepareLogActionData($actionName, $actionType, '');
+            }
+        }
+
+        if($link != ''){
+            $actionName = $actionData['action_name'];
+            $actionType = self::TYPE_PAGE_TITLE;
+            $logActionData[] = $this->prepareLogActionData($actionName, $actionType, '');
+        }
+
+        if($ecommerceItems != 0){
+            if(!$isActionExists['curr_sku']){
+                foreach($ecommerceItems as $ecItem){
+                    $actionName = $ecItem['name'];
+                    $actionType = self::TYPE_ECOMMERCE_ITEM_NAME;
+                    $logActionData[] = $this->prepareLogActionData($actionName, $actionType, '');
+
+                    $actionName = $ecItem['sku'];
+                    $actionType = self::TYPE_ECOMMERCE_ITEM_SKU;
+                    $logActionData[] = $this->prepareLogActionData($actionName, $actionType, '');
+
+                    $actionName = $ecItem['category'];
+                    $actionType = self::TYPE_ECOMMERCE_ITEM_CATEGORY;
+                    $logActionData[] = $this->prepareLogActionData($actionName, $actionType, '');
+                }
+            }
+        }
+        //echo "\n IN LOG ACTION \n";
+        //print_r($logActionData);
+        return $logActionData;
+    }
+
+    private function prepareLogActionData($actionName, $actionType, $urlPrefix){
+        $this->CI->load->library('tracker/log_action_json');
+        $defData = $this->CI->log_action_json->getLogAction();
         $defData['idaction']      =  time();
-        $defData['name']          =  $actionData['e_n'];
-        $defData['hash']          =  md5((implode(",", $actionData)));
-        $defData['type']          =  $actionData['e_c'];
-        $defData['url_prefix']    =  '';
-
+        $defData['name']          =  $actionName;
+        $defData['type']          =  $actionType;
+        $defData['hash']          =  md5($actionName."-".$actionType);
+        $defData['url_prefix']    =  $urlPrefix;
         $this->CI->log_action_json->setLogAction($defData);
-
         $logActionData = $this->CI->log_action_json->getLogAction();
         return $logActionData;
     }
 
     /**
      * Prepare log_link_visit_action collection data
-     * @param $request
-     * @param $logData
-     * @return mixed
      */
-    private function logLinkVisit($request, $logData){
+    private function logLinkVisit($request, $data){
         /*LOG LINK VISIT */
-        $this->CI->load->library('tracker/log_link_visit_json', $logData);
+        //print_r($data);
+
+        $this->CI->load->library('tracker/log_link_visit_json', $data);
         $defData = $this->CI->log_link_visit_json->getLogLinkVisit();
+        $logLinkVisitData = array();
 
-        $idLinkVA = time();
+        if(is_array($data['logAction'])){
+            $idActionName = '';
+            $idActionURL = '';
+            $idActionEventAction = '';
+            $idActionEventCategory = '';
+            foreach($data['logAction'] as $logActionData){
+                $type = $logActionData['type'];
+                if($type == self::TYPE_PAGE_TITLE){
+                    $idActionName = $logActionData['idaction'];
+                }
 
-        $defData['idlink_va']                 =   $idLinkVA;
-        $defData['idsite']                    =   $logData['idsite'];
-        $defData['idvisitor']                 =   $logData['idvisitor'];
-        $defData['idvisit']                   =   $logData['idvisit'];
-        $defData['idaction_url_ref']          =   $logData['idaction'];//TODO $logData['idaction'];
-        $defData['idaction_name_ref']         =   $logData['idaction'];//TODO $logData['type'];
-        $defData['custom_float']              =   '';//TODO $logData['custom_float'];
-        $defData['example_action_dimension']  =   '';//TODO $logData['example_action_dimension'];
-        $defData['idaction_name']             =   $logData['idaction']; //------
-        $defData['idaction_url']              =   $logData['type']; //------
-        $defData['server_time']               =   Date('Y-m-d H:i:s');
-        $defData['time_spent_ref_action']     =   $logData['visit_total_time'];//TODO
-        $defData['idaction_event_action']     =   $logData['type']; //TODO
-        $defData['idaction_event_category']   =   $logData['idaction']; //TODO
-        $defData['custom_var_k1']             =   $logData['custom_var_k1'];
-        $defData['custom_var_v1']             =   $logData['custom_var_v1'];
-        $defData['custom_var_k2']             =   $logData['custom_var_k2'];
-        $defData['custom_var_v2']             =   $logData['custom_var_v2'];
-        $defData['custom_var_k3']             =   $logData['custom_var_k3'];
-        $defData['custom_var_v3']             =   $logData['custom_var_v3'];
-        $defData['custom_var_k4']             =   $logData['custom_var_k4'];
-        $defData['custom_var_v4']             =   $logData['custom_var_v4'];
-        $defData['custom_var_k5']             =   $logData['custom_var_k5'];
-        $defData['custom_var_v5']             =   $logData['custom_var_v5'];
+                if($type == self::TYPE_PAGE_URL){
+                    $idActionURL = $logActionData['idaction'];
+                }
 
-        $this->CI->log_link_visit_json->setLogLinkVisit($defData);
-        $logLinkVisitData = $this->CI->log_link_visit_json->getLogLinkVisit();
+                if($type == self::TYPE_EVENT_ACTION){
+                    $idActionEventAction = $logActionData['idaction'];
+                }
+
+                if($type == self::TYPE_EVENT_CATEGORY){
+                    $idActionEventCategory = $logActionData['idaction'];
+                }
+            }
+
+            $idLinkVA = time();
+            $defData['idlink_va']                 =   $idLinkVA;
+            $defData['idsite']                    =   $data['idsite'];
+            $defData['idvisitor']                 =   $data['idvisitor'];
+            $defData['idvisit']                   =   $data['idvisit'];
+            $defData['server_time']               =   Date('Y-m-d H:i:s');
+            $defData['time_spent_ref_action']     =   $data['visit_total_time'];//TODO
+            $defData['custom_float']              =   '';//TODO $logData['custom_float'];
+            $defData['example_action_dimension']  =   '';//TODO $logData['example_action_dimension'];
+            $defData['idaction_url_ref']          =   '';
+            $defData['idaction_name_ref']         =   '';
+
+            $defData['idaction_name']             =   $idActionName;
+            $defData['idaction_url']              =   $idActionURL;
+            $defData['idaction_event_action']     =   $idActionEventAction;
+            $defData['idaction_event_category']   =   $idActionEventCategory;
+
+            $defData['custom_var_k1']             =   $data['custom_var_k1'];
+            $defData['custom_var_v1']             =   $data['custom_var_v1'];
+            $defData['custom_var_k2']             =   $data['custom_var_k2'];
+            $defData['custom_var_v2']             =   $data['custom_var_v2'];
+            $defData['custom_var_k3']             =   $data['custom_var_k3'];
+            $defData['custom_var_v3']             =   $data['custom_var_v3'];
+            $defData['custom_var_k4']             =   $data['custom_var_k4'];
+            $defData['custom_var_v4']             =   $data['custom_var_v4'];
+            $defData['custom_var_k5']             =   $data['custom_var_k5'];
+            $defData['custom_var_v5']             =   $data['custom_var_v5'];
+
+            $this->CI->log_link_visit_json->setLogLinkVisit($defData);
+            $logLinkVisitData = $this->CI->log_link_visit_json->getLogLinkVisit();
+        }
+        //echo "\n IN LOG LINK VISIT ACTION \n";
         return $logLinkVisitData;
     }
 
@@ -349,6 +591,8 @@ class Tracker_main {
         /**
          * Check for Goal matcher
          */
+        //echo "\n in handle goal \n\n\n\n\n";
+        //print_r($requestData);
         $goalData['goalRecords'] = $requestData['goalRecords'];
         $goalData['url'] = $request->getVisitURL();
         $goalData['type'] = 'url';
@@ -367,11 +611,12 @@ class Tracker_main {
 
             $goals[] = $goalItem;
         }
+        //print_r($goals);
         $goalsUpdated = array();
 
         //Check if it is an ecommerce site
         $siteInfo = $requestData['siteInfo'];
-        if($siteInfo['ecommerce']){
+        if($siteInfo['enableEcommerce']){
             $ecommerce = $requestData['ecommerce'];
             $ecID = $ecommerce['ec_id'];
             $conversionItemsStr = $ecommerce['ec_items'];
@@ -384,6 +629,7 @@ class Tracker_main {
             $revenue = $request->getGoalRevenue(0.00);
             if($ecID != 0 ){
                 if(!empty($goals)){
+                    //echo "goal is not empty";
                     foreach($goals as $gl){
                         $gl['idorder']                               =   $ecID; //TODO Ecommerce
                         $gl['items']                                 =   $itemsCount; //TODO Ecommerce
@@ -397,9 +643,9 @@ class Tracker_main {
                     }
                 }else{
                     $goals = $this->logConversion($request, $logData);
-                    $goals['idgoal'] = $goal['_id'];
-                    $goals['url'] = $goal['url'];
-                    $goals['revenue'] = $goal['revenue'];
+                    //$goals['idgoal'] = $goal['_id'];
+                    $goals['url'] = $goalData['url'];
+                    $goals['revenue'] = $revenue;
                     $goals['idorder']                               =   $ecID; //TODO Ecommerce
                     $goals['items']                                 =   $itemsCount; //TODO Ecommerce
                     $goals['visitor_days_since_order']              =   ''; //TODO Ecommerce
@@ -410,6 +656,8 @@ class Tracker_main {
                     $goals['revenue_tax']                           =   $ectx;
                     $goalsUpdated = $goals;
                 }
+            }else{
+                $goalsUpdated = $goals;
             }
         }else{
             $goalsUpdated = $goals;
@@ -430,12 +678,13 @@ class Tracker_main {
         $this->CI->load->library('tracker/log_conversion_json');
         $defData = $this->CI->log_conversion_json->getLogConversion();
         $dateTime = date("Y-m-d H:i:s");
+        //print_r($logData);
 
         $defData['idvisit']                               =   $logData['idvisit'];
         $defData['idsite']                                =   $logData['idsite'];
         $defData['idvisitor']                             =   $logData['idvisitor'];
         $defData['server_time']                           =   $dateTime;
-        $defData['idaction_url']                          =   $logData['idaction'];
+        $defData['idaction_url']                          =   $logData['idaction_url'];
         $defData['idlink_va']                             =   $logData['idlink_va'];
         $defData['idgoal']                                =   '';
         $defData['buster']                                =   ''; //TODO with piwik
@@ -519,7 +768,7 @@ class Tracker_main {
         $siteInfo = $data['siteInfo'];
         $conversionItemsData = array();
 
-        if($siteInfo['ecommerce']){
+        if($siteInfo['enableEcommerce']){
 
             //print_r($data['ecommerce']);
             $ecommerceData = $data['ecommerce'];

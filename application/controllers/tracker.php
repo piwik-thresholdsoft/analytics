@@ -84,11 +84,13 @@ class Tracker extends CI_Controller {
             if(in_array('_id', $siteData)){
                 $id = $siteData['_id'];
             }
-
-            $data = $this->tracker_main->handle($request, $defData);
-
+            //print_r($defData);
+            $data = $this->tracker_main->handle($request, $this->trackermodel, $defData);
+            //print_r($data);
             $operation = $this->tracker_main->identifyOperation();
-
+            //echo "\n".$operation."\n";
+            //print_r($data['logVisit']);
+            //exit;
             if($operation === 'insert'){
                 /** Insert unique visits data */
                 $res['logVisit'] = $this->trackermodel->insertVisit($data['logVisit']);
@@ -99,7 +101,13 @@ class Tracker extends CI_Controller {
                 $res['logVisit'] = $this->trackermodel->updateVisit($where, $updateData);
             }
             /** Insert visit action data */
-            $res['logAction'] = $this->trackermodel->insertLogAction($data['logAction']);
+            if($this->utility->isMulti($data['logAction'])){
+                $res['logAction'] = $this->trackermodel->insertLogAction($data['logAction'], true);
+            }else{
+                if(!empty($data['logAction'])){
+                    $res['logAction'] = $this->trackermodel->insertLogAction($data['logAction']);
+                }
+            }
             /** Insert link visit action data */
             $res['logLinkVisit'] = $this->trackermodel->insertLinkVisit($data['logLinkVisit']);
 
@@ -139,18 +147,29 @@ class Tracker extends CI_Controller {
                     }
                 }
             }
-
+            //print_r($goalsMatched);
             //print_r($filterPreviousConversions);
-
-            foreach($goalsMatched as $goal){
+            if($this->utility->isMulti($goalsMatched)){
+                foreach($goalsMatched as $goal){
                 //print_r($goal);
-                $gID = $goal["idgoal"]->{'$id'};
-                $url = $goal["url"];
+                if(isset($goal["idgoal"]->{'$id'})){
+                    $gID = $goal["idgoal"]->{'$id'};
+                    $url = $goal["url"];
+                }else{
+                    $gID = "";
+                    $url = "";
+                }
                 if(count($filterPreviousConversions) > 0){
                     foreach($filterPreviousConversions as $conversions5){
                         //$mid = new MongoId($conversions5["idgoal"]);
                         //var_dump($conversions5["idgoal"]);
-                        if(($gID === $conversions5["idgoal"]->{'$id'}) && ($url === $conversions5['url'])){
+                        if(isset($conversions5["idgoal"]->{'$id'})){
+                            $cgID = $conversions5["idgoal"]->{'$id'};
+                        }else{
+                            $cgID = "";
+                        }
+
+                        if(($gID === $cgID) && ($url === $conversions5['url'])){
                             if($conversions5["allow_multiple"]){
                                 $this->trackermodel->insertConversion($goal);
                             }
@@ -163,15 +182,21 @@ class Tracker extends CI_Controller {
                 }
 
             }
-
+            }else {
+                if(!empty($goalsMatched)){
+                    $this->trackermodel->insertConversion($goalsMatched);
+                }
+            }
            /**
             * Ecommerce Converted Items
             */
             //get previous converted items
             $previousItemsWhere = array("idvisitor" => $data['logVisit']['idvisitor'], "idsite" => $data['logVisit']['idsite']);
             $previousConversionItems = $this->trackermodel->getConversionItems($previousItemsWhere);
+            echo "\n converted items \n";
+            //print_r($this->utility->isMulti($data['logConvertedItems']));
 
-            if(count($data['logConvertedItems'])){
+            if($this->utility->isMulti($data['logConvertedItems'])){
                 if(!empty($previousConversionItems)){
                     foreach($data['logConvertedItems'] as $conversionItem){
                             foreach($previousConversionItems as $prevItems){
@@ -182,12 +207,14 @@ class Tracker extends CI_Controller {
                                     $updateWhere = array("_id" => $prevItems['_id']);
                                     $this->trackermodel->updateConversionItem($updateWhere, $updateItem);
                                 }else{
-                                    $this->trackermodel->insertConversionItem($data['logConvertedItems']);
+                                    $this->trackermodel->insertBatchConversionItems($data['logConvertedItems']);
                                 }
                             }
                     }
                 }else{
-                    $this->trackermodel->insertBatchConversionItems($data['logConvertedItems']);
+                    if(!empty($data['logConvertedItems'])){
+                        $this->trackermodel->insertBatchConversionItems($data['logConvertedItems']);
+                    }
                 }
             }
             $response = array("status"=>true, "message"=>"Tracked page successfully");;

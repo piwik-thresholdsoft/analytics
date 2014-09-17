@@ -487,7 +487,7 @@ class Request
         static $pluginsInOrder = array('fla', 'java', 'dir', 'qt', 'realp', 'pdf', 'wma', 'gears', 'ag', 'cookie');
         $plugins = array();
         foreach ($pluginsInOrder as $param) {
-            $plugins[] = $this->CI->common->getRequestVar($param, 0, 'int', $this->params);
+            $plugins[] = $this->CI->common->getRequestVar($param, '', 'int', $this->params);
         }
         return $plugins;
     }
@@ -511,7 +511,7 @@ class Request
     }
 
     public function getDisplayResolution(){
-        return $this->CI->common->getRequestVar('res', 0, 'string', $this->params);
+        return $this->CI->common->getRequestVar('res', '', 'string', $this->params);
     }
 
     public function urlReferer(){
@@ -519,16 +519,16 @@ class Request
     }
 
     public function getVisitURL(){
-        return $this->CI->common->getRequestVar('url', 0, 'string', $this->params);
+        return $this->CI->common->getRequestVar('url', '', 'string', $this->params);
     }
 
     public function getActionData(){
-        $data['action_name'] = $this->CI->common->getRequestVar('action_name', 0, 'string', $this->params);
-        $data['e_a'] = $this->CI->common->getRequestVar('e_a', 0, 'string', $this->params);
-        $data['e_c'] = $this->CI->common->getRequestVar('e_c', 0, 'string', $this->params);
-        $data['e_n'] = $this->CI->common->getRequestVar('e_n', 0, 'string', $this->params);
-        $data['e_v'] = $this->CI->common->getRequestVar('e_v', 0, 'string', $this->params);
-
+        $data['action_name'] = $this->CI->common->getRequestVar('action_name', '', 'string', $this->params);
+        $data['e_a'] = $this->CI->common->getRequestVar('e_a', '', 'string', $this->params);
+        $data['e_c'] = $this->CI->common->getRequestVar('e_c', '', 'string', $this->params);
+        $data['e_n'] = $this->CI->common->getRequestVar('e_n', '', 'string', $this->params);
+        $data['e_v'] = $this->CI->common->getRequestVar('e_v', '', 'string', $this->params);
+        $data['link'] = $this->CI->common->getRequestVar('link', '', 'string', $this->params);
         return $data;
     }
 
@@ -580,5 +580,28 @@ class Request
         $data['ec_dt'] = $this->CI->common->getRequestVar('ec_dt', 0, 'float', $this->params);
         $data['ec_items'] = $this->CI->common->getRequestVar('ec_items', 0, 'string', $this->params);
         return $data;
+    }
+
+    public function getEcommerceItems(){
+        $ecItems = $this->CI->common->getRequestVar('ec_items', '', 'string', $this->params);
+        $ecommerceItems = array();
+        if(!is_null($ecItems)){
+            $conversionItemsAry=explode('],',$ecItems);
+            for($i=0;$i<count($conversionItemsAry);$i++){
+                $str2=explode(',',$conversionItemsAry[$i]);
+                $res = str_replace(array(']','['),"",$str2);
+                if(count($res) > 1){
+                    $item['quantity'] = $res[count($res)-1];
+                    $item['price'] = $res[count($res)-2];
+                    $item['sku'] = $res[0];
+                    $item['name'] = $res[1];
+                    $item['category'] = $res[2];
+                    $ecommerceItems[] = $item;
+                }
+            }
+        }else{
+            $ecommerceItems = 0;
+        }
+       return $ecommerceItems;
     }
 }
