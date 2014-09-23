@@ -52,7 +52,7 @@ $autoload['packages'] = array();
 |	$autoload['libraries'] = array('database', 'session', 'xmlrpc');
 */
 
-$autoload['libraries'] = array('CIMongo', 'utility');
+$autoload['libraries'] = array('ServiceResponse','CIMongo','email','Sendmail', 'session');
 
 
 /*
@@ -64,7 +64,7 @@ $autoload['libraries'] = array('CIMongo', 'utility');
 |	$autoload['helper'] = array('url', 'file');
 */
 
-$autoload['helper'] = array();
+$autoload['helper'] = array('url');
 
 
 /*

@@ -1,11 +1,11 @@
 /*!
- * Piwik - free/libre analytics platform
+ * Bitrum - free/libre analytics platform
  *
  * JavaScript tracking client
  *
- * @link http://piwik.org
- * @source https://github.com/piwik/piwik/blob/master/js/piwik.js
- * @license http://piwik.org/free-software/bsd/ BSD-3 Clause (also in js/LICENSE.txt)
+ * @link http://bitrum.org
+ * @source https://github.com/bitrum/bitrum/blob/master/js/bitrum.js
+ * @license http://bitrum.org/free-software/bsd/ BSD-3 Clause (also in js/LICENSE.txt)
  * @license magnet:?xt=urn:btih:c80d50af7d3db9be66a4d0a86db0286e4fd33292&dn=bsd-3-clause.txt BSD-3-Clause
  */
 // Refer to README.md for build instructions when minifying this file for distribution.
@@ -391,7 +391,7 @@ if (typeof JSON2 !== 'object') {
 /*global unescape */
 /*global ActiveXObject */
 /*members encodeURIComponent, decodeURIComponent, getElementsByTagName,
- shift, unshift, piwikAsyncInit,
+ shift, unshift, bitrumAsyncInit,
  createElement, appendChild, characterSet, charset,
  addEventListener, attachEvent, removeEventListener, detachEvent, disableCookies,
  cookie, domain, readyState, documentElement, doScroll, title, text,
@@ -431,11 +431,11 @@ if (typeof JSON2 !== 'object') {
  setEcommerceView, addEcommerceItem, trackEcommerceOrder, trackEcommerceCartUpdate,
  deleteCookies
  */
-/*global _paq:true */
+/*global _baq:true */
 /*members push */
-/*global Piwik:true */
+/*global Bitrum:true */
 /*members addPlugin, getTracker, getAsyncTracker */
-/*global Piwik_Overlay_Client */
+/*global Bitrum_Overlay_Client */
 /*global AnalyticsTracker:true */
 /*members initialize */
 /*global define */
@@ -443,8 +443,8 @@ if (typeof JSON2 !== 'object') {
 /*global console:true */
 /*members error */
 
-function _piwik(){}
-_piwik.util = {
+function _bitrum(){}
+_bitrum.util = {
     getQueryStringData: function(name) {
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
@@ -455,21 +455,21 @@ _piwik.util = {
 }
 
 // asynchronous tracker (or proxy)
-if (typeof _paq !== 'object') {
-    _paq = [];
+if (typeof _baq !== 'object') {
+    _baq = [];
 
-    var cmpName = _piwik.util.getQueryStringData('pk_campaign');
-    var cmpKeyWord = _piwik.util.getQueryStringData('pk_kwd');
+    var cmpName = _bitrum.util.getQueryStringData('pk_campaign');
+    var cmpKeyWord = _bitrum.util.getQueryStringData('pk_kwd');
     if(cmpName){
-        //_paq.push("setCampaignNameKey", cmpName);
-        //_paq.push("setCampaignKeywordKey", cmpKeyWord);
+        //_baq.push("setCampaignNameKey", cmpName);
+        //_baq.push("setCampaignKeywordKey", cmpKeyWord);
     }
 
 }
 
-// Piwik singleton and namespace
-if (typeof Piwik !== 'object') {
-    Piwik = (function () {
+// Bitrum singleton and namespace
+if (typeof Bitrum !== 'object') {
+    Bitrum = (function () {
         'use strict';
 
         /************************************************************
@@ -509,8 +509,8 @@ if (typeof Piwik !== 'object') {
         /* iterator */
             iterator,
 
-        /* local Piwik */
-            Piwik;
+        /* local Bitrum */
+            Bitrum;
 
         /************************************************************
          * Private methods
@@ -801,7 +801,7 @@ if (typeof Piwik !== 'object') {
             // + namespaced by: Michael White (http://getsprink.com)
             // +      input by: Brett Zamir (http://brett-zamir.me)
             // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-            // +   jslinted by: Anthon Pang (http://piwik.org)
+            // +   jslinted by: Anthon Pang (http://bitrum.org)
 
             var
                 rotate_left = function (n, s) {
@@ -1000,7 +1000,7 @@ if (typeof Piwik !== 'object') {
          * Page Overlay
          ************************************************************/
 
-        function getPiwikUrlForOverlay(trackerUrl, apiUrl) {
+        function getBitrumUrlForOverlay(trackerUrl, apiUrl) {
             if (apiUrl) {
                 return apiUrl;
             }
@@ -1020,9 +1020,9 @@ if (typeof Piwik !== 'object') {
          * {@internal side-effect: modifies window.name }}
          */
         function isOverlaySession(configTrackerSiteId) {
-            var windowName = 'Piwik_Overlay';
+            var windowName = 'Bitrum_Overlay';
 
-            // check whether we were redirected from the piwik overlay plugin
+            // check whether we were redirected from the bitrum overlay plugin
             var referrerRegExp = new RegExp('index\\.php\\?module=Overlay&action=startOverlaySession'
                 + '&idSite=([0-9]+)&period=([^&]+)&date=([^&]+)$');
 
@@ -1056,12 +1056,12 @@ if (typeof Piwik !== 'object') {
             var windowNameParts = windowAlias.name.split('###'),
                 period = windowNameParts[1],
                 date = windowNameParts[2],
-                piwikUrl = getPiwikUrlForOverlay(configTrackerUrl, configApiUrl);
+                bitrumUrl = getBitrumUrlForOverlay(configTrackerUrl, configApiUrl);
 
             loadScript(
-                piwikUrl + 'plugins/Overlay/client/client.js?v=1',
+                bitrumUrl + 'plugins/Overlay/client/client.js?v=1',
                 function () {
-                    Piwik_Overlay_Client.initialize(piwikUrl, configTrackerSiteId, period, date);
+                    Bitrum_Overlay_Client.initialize(bitrumUrl, configTrackerSiteId, period, date);
                 }
             );
         }
@@ -1071,7 +1071,7 @@ if (typeof Piwik !== 'object') {
          ************************************************************/
 
         /*
-         * Piwik Tracker class
+         * Bitrum Tracker class
          *
          * trackerUrl and trackerSiteId are optional arguments to the constructor
          *
@@ -1158,10 +1158,10 @@ if (typeof Piwik !== 'object') {
                 configCustomData,
 
             // Campaign names
-                configCampaignNameParameters = [ 'pk_campaign', 'piwik_campaign', 'utm_campaign', 'utm_source', 'utm_medium' ],
+                configCampaignNameParameters = [ 'pk_campaign', 'bitrum_campaign', 'utm_campaign', 'utm_source', 'utm_medium' ],
 
             // Campaign keywords
-                configCampaignKeywordParameters = [ 'pk_kwd', 'piwik_kwd', 'utm_term' ],
+                configCampaignKeywordParameters = [ 'pk_kwd', 'bitrum_kwd', 'utm_term' ],
 
             // First-party cookie name prefix
                 configCookieNamePrefix = '_pk_',
@@ -1368,7 +1368,7 @@ if (typeof Piwik !== 'object') {
             }
 
             /*
-             * Send image request to Piwik server using GET.
+             * Send image request to Bitrum server using GET.
              * The infamous web bug (or beacon) is a transparent, single pixel (1x1) image
              */
             function getImage(request) {
@@ -1384,7 +1384,7 @@ if (typeof Piwik !== 'object') {
             }
 
             /*
-             * POST request to Piwik server using XMLHttpRequest.
+             * POST request to Bitrum server using XMLHttpRequest.
              */
             function sendXmlHttpRequest(request) {
                 console.log("in xhr fun", request, configTrackerUrl);
@@ -1437,7 +1437,7 @@ if (typeof Piwik !== 'object') {
              * Get cookie name with prefix and domain hash
              */
             function getCookieName(baseName) {
-                // NOTE: If the cookie name is changed, we must also update the PiwikTracker.php which
+                // NOTE: If the cookie name is changed, we must also update the BitrumTracker.php which
                 // will attempt to discover first party cookies. eg. See the PHP Client method getVisitorId()
                 return configCookieNamePrefix + baseName + '.' + configTrackerSiteId + '.' + domainHash;
             }
@@ -1641,7 +1641,7 @@ if (typeof Piwik !== 'object') {
             }
 
             /**
-             * Returns the URL to call piwik.php,
+             * Returns the URL to call bitrum.php,
              * with the standard parameters (plugins, resolution, url, referrer, etc.).
              * Sends the pageview and browser settings with every request in case of race conditions.
              */
@@ -1700,7 +1700,7 @@ if (typeof Piwik !== 'object') {
 
                 // send charset if document charset is not utf-8. sometimes encoding
                 // of urls will be the same as this and not utf-8, which will cause problems
-                // do not send charset if it is utf8 since it's assumed by default in Piwik
+                // do not send charset if it is utf8 since it's assumed by default in Bitrum
                 var charSet = documentAlias.characterSet || documentAlias.charset;
 
                 if (!charSet || charSet.toLowerCase() === 'utf-8') {
@@ -2110,7 +2110,7 @@ if (typeof Piwik !== 'object') {
              */
             function getClassesRegExp(configClasses, defaultClass) {
                 var i,
-                    classesRegExp = '(^| )(piwik[_-]' + defaultClass;
+                    classesRegExp = '(^| )(bitrum[_-]' + defaultClass;
 
                 if (configClasses) {
                     for (i = 0; i < configClasses.length; i++) {
@@ -2399,7 +2399,7 @@ if (typeof Piwik !== 'object') {
                  * To access specific data point, you should use the other functions getAttributionReferrer* and getAttributionCampaign*
                  *
                  * @return array Attribution array, Example use:
-                 *   1) Call JSON2.stringify(piwikTracker.getAttributionInfo())
+                 *   1) Call JSON2.stringify(bitrumTracker.getAttributionInfo())
                  *   2) Pass this json encoded string to the Tracking API (php or java client): setAttributionInfo()
                  */
                 getAttributionInfo: function () {
@@ -2445,7 +2445,7 @@ if (typeof Piwik !== 'object') {
                 },
 
                 /**
-                 * Specify the Piwik server URL
+                 * Specify the Bitrum server URL
                  *
                  * @param string trackerUrl
                  */
@@ -2514,7 +2514,7 @@ if (typeof Piwik !== 'object') {
                 },
 
                 /**
-                 * Appends the specified query string to the piwik.php?... Tracking API URL
+                 * Appends the specified query string to the bitrum.php?... Tracking API URL
                  *
                  * @param string queryString eg. 'lat=140&long=100'
                  */
@@ -2524,7 +2524,7 @@ if (typeof Piwik !== 'object') {
 
                 /**
                  * Returns the query string for the current HTTP Tracking API request.
-                 * Piwik would prepend the hostname and path to Piwik: http://example.org/piwik/piwik.php?
+                 * Bitrum would prepend the hostname and path to Bitrum: http://example.org/bitrum/bitrum.php?
                  * prior to sending the request.
                  *
                  * @param request eg. "param=value&param2=value2"
@@ -2720,7 +2720,7 @@ if (typeof Piwik !== 'object') {
                 },
 
                 /**
-                 * Set the URL of the Piwik API. It is used for Page Overlay.
+                 * Set the URL of the Bitrum API. It is used for Page Overlay.
                  * This method should only be called when the API URL differs from the tracker URL.
                  *
                  * @param string apiUrl
@@ -2750,7 +2750,7 @@ if (typeof Piwik !== 'object') {
                 /**
                  * Set array of campaign name parameters
                  *
-                 * @see http://piwik.org/faq/how-to/#faq_120
+                 * @see http://bitrum.org/faq/how-to/#faq_120
                  * @param string|array campaignNames
                  */
                 setCampaignNameKey: function (campaignNames) {
@@ -2760,7 +2760,7 @@ if (typeof Piwik !== 'object') {
                 /**
                  * Set array of campaign keyword parameters
                  *
-                 * @see http://piwik.org/faq/how-to/#faq_120
+                 * @see http://bitrum.org/faq/how-to/#faq_120
                  * @param string|array campaignKeywords
                  */
                 setCampaignKeywordKey: function (campaignKeywords) {
@@ -2769,7 +2769,7 @@ if (typeof Piwik !== 'object') {
 
                 /**
                  * Strip hash tag (or anchor) from URL
-                 * Note: this can be done in the Piwik>Settings>Websites on a per-website basis
+                 * Note: this can be done in the Bitrum>Settings>Websites on a per-website basis
                  *
                  * @deprecated
                  * @param bool enableFilter
@@ -2884,7 +2884,7 @@ if (typeof Piwik !== 'object') {
 
                 /**
                  * Add click listener to a specific link element.
-                 * When clicked, Piwik will log the click automatically.
+                 * When clicked, Bitrum will log the click automatically.
                  *
                  * @param DOMElement element
                  * @param bool enable If true, use pseudo click-handler (mousedown+mouseup)
@@ -2936,7 +2936,7 @@ if (typeof Piwik !== 'object') {
                  *
                  * Make sure not to overwrite the window.onerror handler after enabling the JS error
                  * tracking as the error tracking won't work otherwise. To capture all JS errors we
-                 * recommend to include the Piwik JavaScript tracker in the HTML as early as possible.
+                 * recommend to include the Bitrum JavaScript tracker in the HTML as early as possible.
                  * If possible directly in <head></head> before loading any other JavaScript.
                  */
                 enableJSErrorTracking: function () {
@@ -3105,13 +3105,13 @@ if (typeof Piwik !== 'object') {
                  *
                  * On a category page, you can set the parameter category, and set the other parameters to empty string or false
                  *
-                 * Tracking Product/Category page views will allow Piwik to report on Product & Categories
+                 * Tracking Product/Category page views will allow Bitrum to report on Product & Categories
                  * conversion rates (Conversion rate = Ecommerce orders containing this product or category / Visits to the product or category)
                  *
                  * @param string sku Item's SKU code being viewed
                  * @param string name Item's Name being viewed
                  * @param string category Category page being viewed. On an Item's page, this is the item's category
-                 * @param float price Item's display price, not use in standard Piwik reports, but output in API product reports.
+                 * @param float price Item's display price, not use in standard Bitrum reports, but output in API product reports.
                  */
                 setEcommerceView: function (sku, name, category, price) {
                     if (!isDefined(category) || !category.length) {
@@ -3163,12 +3163,12 @@ if (typeof Piwik !== 'object') {
                 /**
                  * Tracks an Ecommerce order.
                  * If the Ecommerce order contains items (products), you must call first the addEcommerceItem() for each item in the order.
-                 * All revenues (grandTotal, subTotal, tax, shipping, discount) will be individually summed and reported in Piwik reports.
+                 * All revenues (grandTotal, subTotal, tax, shipping, discount) will be individually summed and reported in Bitrum reports.
                  * Parameters orderId and grandTotal are required. For others, you can set to false if you don't need to specify them.
                  *
                  * @param string|int orderId (required) Unique Order ID.
                  *                   This will be used to count this order only once in the event the order page is reloaded several times.
-                 *                   orderId must be unique for each transaction, even on different days, or the transaction will not be recorded by Piwik.
+                 *                   orderId must be unique for each transaction, even on different days, or the transaction will not be recorded by Bitrum.
                  * @param float grandTotal (required) Grand Total revenue of the transaction (including tax, shipping, etc.)
                  * @param float subTotal (optional) Sub total amount, typically the sum of items prices for all items in this order (before Tax and Shipping costs are applied)
                  * @param float tax (optional) Tax amount for this order
@@ -3205,7 +3205,7 @@ if (typeof Piwik !== 'object') {
 
         /************************************************************
          * Proxy object
-         * - this allows the caller to continue push()'ing to _paq
+         * - this allows the caller to continue push()'ing to _baq
          *   after the Tracker has been initialized and loaded
          ************************************************************/
 
@@ -3219,7 +3219,7 @@ if (typeof Piwik !== 'object') {
          * Constructor
          ************************************************************/
 
-            // initialize the Piwik singleton
+            // initialize the Bitrum singleton
         addEventListener(windowAlias, 'beforeunload', beforeUnloadHandler, false);
         addReadyListener();
 
@@ -3231,21 +3231,21 @@ if (typeof Piwik !== 'object') {
         var methodName;
 
         console.log(applyFirst);
-        console.log("paq queue", _paq);
+        console.log("paq queue", _baq);
         // find the call to setTrackerUrl or setSiteid (if any) and call them first
-        for (iterator = 0; iterator < _paq.length; iterator++) {
-            console.log("iterator", _paq[iterator]);
-            methodName = _paq[iterator][0];
+        for (iterator = 0; iterator < _baq.length; iterator++) {
+            console.log("iterator", _baq[iterator]);
+            methodName = _baq[iterator][0];
 
 
             if (applyFirst[methodName]) {
                 console.log("in fi", methodName, applyFirst[methodName]);
-                apply(_paq[iterator]);
-                delete _paq[iterator];
+                apply(_baq[iterator]);
+                delete _baq[iterator];
 
                 if (applyFirst[methodName] > 1) {
                     if (console !== undefined && console && console.error) {
-                        console.error('The method ' + methodName + ' is registered more than once in "_paq" variable. Only the last call has an effect. Please have a look at the multiple Piwik trackers documentation: http://developer.piwik.org/api-reference/tracking-javascript#multiple-piwik-trackers');
+                        console.error('The method ' + methodName + ' is registered more than once in "_baq" variable. Only the last call has an effect. Please have a look at the multiple Bitrum trackers documentation: http://developer.bitrum.org/api-reference/tracking-javascript#multiple-bitrum-trackers');
                     }
                 }
 
@@ -3254,20 +3254,20 @@ if (typeof Piwik !== 'object') {
         }
 
         // apply the queue of actions
-        for (iterator = 0; iterator < _paq.length; iterator++) {
-            if (_paq[iterator]) {
-                apply(_paq[iterator]);
+        for (iterator = 0; iterator < _baq.length; iterator++) {
+            if (_baq[iterator]) {
+                apply(_baq[iterator]);
             }
         }
 
         // replace initialization array with proxy object
-        _paq = new TrackerProxy();
+        _baq = new TrackerProxy();
 
         /************************************************************
          * Public data and methods
          ************************************************************/
 
-        Piwik = {
+        Bitrum = {
             /**
              * Add plugin
              *
@@ -3281,12 +3281,12 @@ if (typeof Piwik !== 'object') {
             /**
              * Get Tracker (factory method)
              *
-             * @param string piwikUrl
+             * @param string bitrumUrl
              * @param int|string siteId
              * @return Tracker
              */
-            getTracker: function (piwikUrl, siteId) {
-                return new Tracker(piwikUrl, siteId);
+            getTracker: function (bitrumUrl, siteId) {
+                return new Tracker(bitrumUrl, siteId);
             },
 
             /**
@@ -3299,56 +3299,56 @@ if (typeof Piwik !== 'object') {
             }
         };
 
-        // Expose Piwik as an AMD module
+        // Expose Bitrum as an AMD module
         if (typeof define === 'function' && define.amd) {
-            define('piwik', [], function () { return Piwik; });
+            define('bitrum', [], function () { return Bitrum; });
         }
 
-        return Piwik;
+        return Bitrum;
     }());
 }
 
-if (window && window.piwikAsyncInit) {
-    window.piwikAsyncInit();
+if (window && window.bitrumAsyncInit) {
+    window.bitrumAsyncInit();
 }
 
 /*jslint sloppy: true */
 (function () {
     var jsTrackerType = (typeof AnalyticsTracker);
     if (jsTrackerType === 'undefined') {
-        AnalyticsTracker = Piwik;
+        AnalyticsTracker = Bitrum;
     }
 }());
 /*jslint sloppy: false */
 
 /************************************************************
  * Deprecated functionality below
- * Legacy piwik.js compatibility ftw
+ * Legacy bitrum.js compatibility ftw
  ************************************************************/
 
 /*
- * Piwik globals
+ * Bitrum globals
  *
- *   var piwik_install_tracker, piwik_tracker_pause, piwik_download_extensions, piwik_hosts_alias, piwik_ignore_classes;
+ *   var bitrum_install_tracker, bitrum_tracker_pause, bitrum_download_extensions, bitrum_hosts_alias, bitrum_ignore_classes;
  */
-/*global piwik_log:true */
-/*global piwik_track:true */
+/*global bitrum_log:true */
+/*global bitrum_track:true */
 
 /**
  * Track page visit
  *
  * @param string documentTitle
  * @param int|string siteId
- * @param string piwikUrl
+ * @param string bitrumUrl
  * @param mixed customData
  */
-if (typeof piwik_log !== 'function') {
-    piwik_log = function (documentTitle, siteId, piwikUrl, customData) {
+if (typeof bitrum_log !== 'function') {
+    bitrum_log = function (documentTitle, siteId, bitrumUrl, customData) {
         'use strict';
 
         function getOption(optionName) {
             try {
-                return eval('piwik_' + optionName);
+                return eval('bitrum_' + optionName);
             } catch (ignore) { }
 
             return; // undefined
@@ -3356,39 +3356,39 @@ if (typeof piwik_log !== 'function') {
 
         // instantiate the tracker
         var option,
-            piwikTracker = Piwik.getTracker(piwikUrl, siteId);
+            bitrumTracker = Bitrum.getTracker(bitrumUrl, siteId);
 
         // initialize tracker
-        piwikTracker.setDocumentTitle(documentTitle);
-        piwikTracker.setCustomData(customData);
+        bitrumTracker.setDocumentTitle(documentTitle);
+        bitrumTracker.setCustomData(customData);
 
-        // handle Piwik globals
+        // handle Bitrum globals
         option = getOption('tracker_pause');
 
         if (option) {
-            piwikTracker.setLinkTrackingTimer(option);
+            bitrumTracker.setLinkTrackingTimer(option);
         }
 
         option = getOption('download_extensions');
 
         if (option) {
-            piwikTracker.setDownloadExtensions(option);
+            bitrumTracker.setDownloadExtensions(option);
         }
 
         option = getOption('hosts_alias');
 
         if (option) {
-            piwikTracker.setDomains(option);
+            bitrumTracker.setDomains(option);
         }
 
         option = getOption('ignore_classes');
 
         if (option) {
-            piwikTracker.setIgnoreClasses(option);
+            bitrumTracker.setIgnoreClasses(option);
         }
 
         // track this page view
-        piwikTracker.trackPageView();
+        bitrumTracker.trackPageView();
 
         // default is to install the link tracker
         if (getOption('install_tracker')) {
@@ -3398,17 +3398,17 @@ if (typeof piwik_log !== 'function') {
              *
              * @param string sourceUrl
              * @param int|string siteId
-             * @param string piwikUrl
+             * @param string bitrumUrl
              * @param string linkType
              */
-            piwik_track = function (sourceUrl, siteId, piwikUrl, linkType) {
-                piwikTracker.setSiteId(siteId);
-                piwikTracker.setTrackerUrl(piwikUrl);
-                piwikTracker.trackLink(sourceUrl, linkType);
+            bitrum_track = function (sourceUrl, siteId, bitrumUrl, linkType) {
+                bitrumTracker.setSiteId(siteId);
+                bitrumTracker.setTrackerUrl(bitrumUrl);
+                bitrumTracker.trackLink(sourceUrl, linkType);
             };
 
             // set-up link tracking
-            piwikTracker.enableLinkTracking();
+            bitrumTracker.enableLinkTracking();
         }
     };
 }

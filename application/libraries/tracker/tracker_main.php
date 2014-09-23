@@ -75,19 +75,20 @@ class Tracker_main {
 
         //print_r($data);
 
+        $isReferrerURLExists = false;
+        $isReferrerNameExists = false;
+        $isCurrentURLExists = false;
+        $isCurrentNameExists = false;
+        $isCurrentSKUExists = false;
+
         if(isset($data['idvisit'])){
-            $logLinkVisitActionData = $this->trackerModel->getLogLinkVisitData(array("idsite" => $data['idsite'], "idvisit"=> $data["idvisit"]), array("idaction_name", "idaction_url"));
+            $logLinkVisitActionData = $this->trackerModel->getLogLinkVisitData(array("idsite" => $data['idsite'], "idvisit"=> $data["idvisit"]), array("idaction_name", "idaction_url","idaction_name_ref", "idaction_url_ref"));
             //print_r(($logLinkVisitActionData));
 
             $referrerURL = $request->urlReferer();
             $pageURL = $request->getVisitURL();
             $pageName = $request->getActionData();
             $ecNames = $request->getEcommerceItems();
-            $isReferrerURLExists = false;
-            $isReferrerNameExists = false;
-            $isCurrentURLExists = false;
-            $isCurrentNameExists = false;
-            $isCurrentSKUExists = false;
             $pageSKUs = array();
             if($ecNames != 0){
                 foreach($ecNames as $ecn){
@@ -98,9 +99,9 @@ class Tracker_main {
             //print_r($pageSKUs);
 
             foreach($logLinkVisitActionData as $linkVisitData){
-                $urls = $this->trackerModel->getLogActionData(array("idaction"=>$linkVisitData['idaction_name'], "type"=>self::TYPE_PAGE_URL));
-                $actionLogNamesData = $this->trackerModel->getLogActionData(array("idaction"=>$linkVisitData['idaction_name'], "type"=>array('$in'=> array(self::TYPE_PAGE_TITLE, self::TYPE_ECOMMERCE_ITEM_NAME,self::TYPE_ECOMMERCE_ITEM_CATEGORY,self::TYPE_ECOMMERCE_ITEM_SKU,self::TYPE_EVENT,self::TYPE_EVENT_ACTION,self::TYPE_EVENT_CATEGORY,self::TYPE_EVENT_NAME,self::TYPE_EVENT_VALUE,self::TYPE_SITE_SEARCH))));
-                $currentName = $this->trackerModel->getLogActionData(array("idaction"=>$linkVisitData['idaction_name'], "type"=>array('$in'=> array(self::TYPE_PAGE_TITLE, self::TYPE_ECOMMERCE_ITEM_NAME,self::TYPE_ECOMMERCE_ITEM_CATEGORY,self::TYPE_ECOMMERCE_ITEM_SKU,self::TYPE_EVENT,self::TYPE_EVENT_ACTION,self::TYPE_EVENT_CATEGORY,self::TYPE_EVENT_NAME,self::TYPE_EVENT_VALUE,self::TYPE_SITE_SEARCH))));
+                $urls = $this->trackerModel->getLogActionData(array("idaction"=>array('$in'=>array($linkVisitData['idaction_url'],$linkVisitData['idaction_url_ref'])), "type"=>self::TYPE_PAGE_URL));
+                $actionLogNamesData = $this->trackerModel->getLogActionData(array("idaction"=>array('$in'=>array($linkVisitData['idaction_name'],$linkVisitData['idaction_name_ref'])), "type"=>array('$in'=> array(self::TYPE_PAGE_TITLE, self::TYPE_ECOMMERCE_ITEM_NAME,self::TYPE_ECOMMERCE_ITEM_CATEGORY,self::TYPE_ECOMMERCE_ITEM_SKU,self::TYPE_EVENT,self::TYPE_EVENT_ACTION,self::TYPE_EVENT_CATEGORY,self::TYPE_EVENT_NAME,self::TYPE_EVENT_VALUE,self::TYPE_SITE_SEARCH))));
+                $currentName = $this->trackerModel->getLogActionData(array("idaction"=>array('$in'=>array($linkVisitData['idaction_name'], $linkVisitData['idaction_name_ref'])), "type"=>array('$in'=> array(self::TYPE_PAGE_TITLE, self::TYPE_ECOMMERCE_ITEM_NAME,self::TYPE_ECOMMERCE_ITEM_CATEGORY,self::TYPE_ECOMMERCE_ITEM_SKU,self::TYPE_EVENT,self::TYPE_EVENT_ACTION,self::TYPE_EVENT_CATEGORY,self::TYPE_EVENT_NAME,self::TYPE_EVENT_VALUE,self::TYPE_SITE_SEARCH))));
                 foreach($urls as $urlRef){
                     //Match for entry page with referrer url
                     if($urlRef['name'] == $referrerURL){
@@ -174,18 +175,32 @@ class Tracker_main {
         $logVisitLogActionData['logAction'] = $returnData['logAction'];
         $returnData['logLinkVisit'] = $this->logLinkVisit($request, $logVisitLogActionData);
 
+
         /** Check previous visit details for entry and exit pages */
-        //echo "\n LOG action data \n";
-       // print_r($returnData['logAction']);
         if($this->utility->isMulti($returnData['logAction'])){
+            echo "\n log-action data \n";
+            print_r($returnData['logAction']);
             foreach($returnData['logAction'] as $logAction){
                 if($logAction['type'] == self::TYPE_PAGE_URL){
-                    $visitEntryIdActionURL  = $logAction['idaction'];
-                    $visitExitIdActionURL   = $logAction['idaction'];
+                    if(!$isReferrerURLExists){
+                        $isReferrerURLExists = true;
+                        $visitEntryIdActionURL  = $logAction['idaction'];
+                    }
+                    if(!$isCurrentURLExists){
+                        $isCurrentURLExists = true;
+                        $visitExitIdActionURL   = $logAction['idaction'];
+                    }
+
                 }
-                if($logAction['type'] == self::TYPE_PAGE_TITLE){
-                    $visitEntryIdActionName = $logAction['idaction'];
-                    $visitExitIdActionName  = $logAction['idaction'];
+                if(in_array($logAction['type'],array(self::TYPE_PAGE_TITLE, self::TYPE_ECOMMERCE_ITEM_NAME,self::TYPE_ECOMMERCE_ITEM_CATEGORY,self::TYPE_ECOMMERCE_ITEM_SKU,self::TYPE_EVENT,self::TYPE_EVENT_ACTION,self::TYPE_EVENT_CATEGORY,self::TYPE_EVENT_NAME,self::TYPE_EVENT_VALUE,self::TYPE_SITE_SEARCH))){
+                    if(!$isCurrentNameExists){
+                        $isCurrentNameExists = true;
+                        $visitExitIdActionName  = $logAction['idaction'];
+                    }
+                    if(!$isReferrerNameExists){
+                        $isReferrerNameExists = true;
+                        $visitEntryIdActionName = $logAction['idaction'];
+                    }
                 }
             }
         }
@@ -202,6 +217,10 @@ class Tracker_main {
             $visitExitIdActionName = '';
         }
 
+        echo "\n Entry name-".$visitEntryIdActionName;
+        echo "\n Entry url-".$visitEntryIdActionURL;
+        echo "\n Exit name-".$visitExitIdActionName;
+        echo "\n Exit url-".$visitExitIdActionURL;
 
         $returnData['logVisit']['visit_entry_idaction_name'] = $visitEntryIdActionName;
         $returnData['logVisit']['visit_entry_idaction_url']  = $visitEntryIdActionURL;
@@ -296,7 +315,7 @@ class Tracker_main {
             /** Visitor type new visitor */
             $this->logOperation = 'insert';
 
-            $defData['idvisit'] = time();
+            $defData['idvisit'] = uniqid();
             $defData['idvisitor'] = md5($configID);
             $defData['config_resolution'] = $request->getDisplayResolution();
             $defData['visitor_localtime'] = $request->getLocalTime();
@@ -453,7 +472,7 @@ class Tracker_main {
     private function prepareLogActionData($actionName, $actionType, $urlPrefix){
         $this->CI->load->library('tracker/log_action_json');
         $defData = $this->CI->log_action_json->getLogAction();
-        $defData['idaction']      =  time();
+        $defData['idaction']      =  uniqid();
         $defData['name']          =  $actionName;
         $defData['type']          =  $actionType;
         $defData['hash']          =  md5($actionName."-".$actionType);
@@ -498,7 +517,7 @@ class Tracker_main {
                 }
             }
 
-            $idLinkVA = time();
+            $idLinkVA = uniqid();
             $defData['idlink_va']                 =   $idLinkVA;
             $defData['idsite']                    =   $data['idsite'];
             $defData['idvisitor']                 =   $data['idvisitor'];

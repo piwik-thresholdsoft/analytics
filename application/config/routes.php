@@ -38,23 +38,57 @@
 |
 */
 
-$route['default_controller'] = "welcome";
-//$route['404_override'] = '';
+$route['default_controller'] = "default_controller";
+$route['404_override'] = '';
+$route['test/(:any)'] = 'test/$1';
 
 
-$route['tracker/(:any)'] = 'tracker/index';
-$route['addsite/index'] = 'addsite/index';
-$route['welcome/(:any)'] = 'welcome/$1';
+/* user transactions start */
+$route['api/user/login'] = 'api/user/verifyUser';
+$route['api/user/registration'] = 'api/user/addUser';
+$route['api/user/(:any)/edit'] = 'api/user/updateUser/$1';
+$route['api/user/(:any)/delete'] = 'api/user/deleteUser';
+$route['api/user/(:any)'] = 'api/user/getUserDetails/$1';
+$route['api/user/getUserId']='api/user/getUserId';
+$route['api/user/logout']='api/user/logout';
+/* user transactions end */
 
-/*$route['piwik/getGoals'] = 'goals/getGoals';
-$route['piwik/addGoalService'] = 'goals/newGoal';
-$route['piwik/updateGoalService'] = 'welcome/updateGoal';
-$route['piwik/getGoalService'] = 'goals/getGoals';
-$route['piwik/deleteGoals'] = 'welcome/deleteGoals';
-$route['piwik/saveUser'] = 'welcome/saveUser';*/
+/* sites transactions start*/
+$route['api/sites'] = (strtoupper ($_SERVER['REQUEST_METHOD']) == 'POST'  ? 'api/sites/addSite' :
+    (strtoupper ($_SERVER['REQUEST_METHOD']) == 'GET'  ? 'api/sites/getSites' :
+     (strtoupper ($_SERVER['REQUEST_METHOD']) == 'DELETE'  ? 'api/sites/deleteMultipleSites' :
+            '')));
+
+$route['api/sites/(:any)'] = (strtoupper ($_SERVER['REQUEST_METHOD']) == 'GET'  ? 'api/sites/getSiteDetails/$1' :
+    (strtoupper ($_SERVER['REQUEST_METHOD']) == 'PUT'  ? 'api/sites/updateSite/$1' :
+        (strtoupper ($_SERVER['REQUEST_METHOD']) == 'DELETE'  ? 'api/sites/deleteSite/$1' :
+            '')));
+/* sites transactions end*/
+
+/* ecommerce transactions start*/
+
+$route['api/goals'] = (strtoupper ($_SERVER['REQUEST_METHOD']) == 'POST'  ? 'api/ecommerce/addGoal' :
+    (strtoupper ($_SERVER['REQUEST_METHOD']) == 'GET'  ? 'api/ecommerce/getGoals' :
+    (strtoupper ($_SERVER['REQUEST_METHOD']) == 'DELETE'  ? 'api/ecommerce/deleteMultipleGoals' :
+            '')));
+
+$route['api/goals/(:any)'] = (strtoupper ($_SERVER['REQUEST_METHOD']) == 'GET'  ? 'api/ecommerce/getGoalDetails/$1' :
+    (strtoupper ($_SERVER['REQUEST_METHOD']) == 'PUT'  ? 'api/ecommerce/updateGoal/$1' :
+    (strtoupper ($_SERVER['REQUEST_METHOD']) == 'DELETE'  ? 'api/ecommerce/deleteGoal/$1' :
+        '')));
+
+/*ecommerce transaction end*/
+
+/* analytics transaction start */
+$route['api/analytics/all/(:any)'] = (strtoupper ($_SERVER['REQUEST_METHOD']) == 'GET'  ? 'api/analytics/identifyGoal/$1' :'');
+$route['api/analytics/ecommerce/(:any)'] = (strtoupper ($_SERVER['REQUEST_METHOD']) == 'GET'  ? 'api/analytics/getEcommerceOrders/$1' :'');
+
+/* analytics transaction end /*
 
 
 
-//$route['(:any)'] = 'welcome/index';
+
+$route['api/(:any)'] = 'api/$1';
+
 /* End of file routes.php */
 /* Location: ./application/config/routes.php */

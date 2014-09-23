@@ -36,6 +36,15 @@ define('FOPEN_READ_WRITE_CREATE',				'a+b');
 define('FOPEN_WRITE_CREATE_STRICT',				'xb');
 define('FOPEN_READ_WRITE_CREATE_STRICT',		'x+b');
 
+
+define('WEBSITE_URL', 'http://localhost/bitrum/index.php');
+define('WEBSITE_DIR', 'http://localhost/bitrum/');
+
+define('WEBSITE_URL_INDEX', 'index.php/');
+
 define('VISIT_TIME_DIFF', '3000'); //visit time difference in seconds
+
+
+
 /* End of file constants.php */
 /* Location: ./application/config/constants.php */
